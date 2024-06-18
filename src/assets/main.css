@@ -49,6 +49,7 @@ body {
     background-color: var(--bg);
     font-family: "Krona One", sans-serif;
     overflow-x: hidden;
+    text-shadow: 1px 1px #000 ;
 }
 
 #close_wrapper {
@@ -403,11 +404,17 @@ header {
 }
 
 #filter_types {
+    margin-top: calc(var(--scale_ui));
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .filter_single_type {
-    width: calc(var(--scale_ui));
+    text-align: center;
+    width: calc(var(--scale_ui)*3);
     border-radius: 100Vw;
+    padding: calc(var(--scale_ui)*0.2) 0;
+    margin: calc(var(--scale_ui)*0.5);
 }
