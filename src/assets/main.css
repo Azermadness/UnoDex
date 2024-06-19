@@ -42,6 +42,10 @@
     .single_moves_title {
         width: 50vw !important;
     }
+
+    #filter_types {
+        padding: 0 calc(var(--scale_ui)*4) !important;
+    }
 }
 
 body {
@@ -417,4 +421,24 @@ header {
     border-radius: 100Vw;
     padding: calc(var(--scale_ui)*0.2) 0;
     margin: calc(var(--scale_ui)*0.5);
+}
+
+#filters_button_wrapper {
+    gap: calc(var(--scale_ui)*0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+}
+
+#filter_reset {
+    font-size: calc(var(--scale_ui)*0.5);
+}
+
+#filter_apply {
+    font-size: calc(var(--scale_ui)*0.7);
+    background-color: var(--def_type);
+    border-radius: 100vw;
+    padding: calc(var(--scale_ui)*0.5) calc(var(--scale_ui));
 }

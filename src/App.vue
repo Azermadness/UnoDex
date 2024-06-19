@@ -5,11 +5,12 @@
     let moves = ref([]);
     let search = ref("");
     let detail_id = ref();
-    let detail_bool = ref();
-    let enabled = ref();
-    let filters_bool = ref();
-    let bool_and = ref();
-    let bool_or = ref();
+    let detail_bool = ref(false);
+    let enabled = ref(false);
+    let filters_bool = ref(false);
+    let bool_and = ref(false);
+    let bool_or = ref(true);
+    let bool_types = ref([]);
 
     fetch("https://web24.mmi-stdie.fr/nathan/wp-json/truc/pokemon")
         .then((response) => {
@@ -38,6 +39,7 @@
         .then((response) => {
             response.json().then((data) => {
                 types.value = data;
+                initBool_types();
             });
         })
         .catch((error) => {
@@ -45,9 +47,42 @@
         });
 
     const filteredPokemons = computed(() => {
-        return pokemons.value.filter((pokemon) =>
-            pokemon.acf.pokemon_name.includes(toCamelCaseWord(search.value))
-        );
+        let index = 0;
+        let ids = [];
+        bool_types.value.forEach((bType) => {
+            if (bType) {
+                ids.push(types.value[index].ID);
+            }
+            index++;
+        });
+
+        console.log(ids);
+
+        if (bool_and.value.value) {
+            return pokemons.value
+                .filter((pokemon) =>
+                    pokemon.acf.pokemon_name.includes(
+                        toCamelCaseWord(search.value)
+                    )
+                )
+                .filter((pokemon) =>
+                    ids.every((id) =>
+                        pokemon.acf.pokemon_type.some((type) => type.ID === id)
+                    )
+                );
+        } else {
+            return pokemons.value
+                .filter((pokemon) =>
+                    pokemon.acf.pokemon_name.includes(
+                        toCamelCaseWord(search.value)
+                    )
+                )
+                .filter((pokemon) =>
+                    ids.some((id) => 
+                        pokemon.acf.pokemon_type.some((type) => type.ID === id)
+                    )
+                );
+        }
     });
 
     const getMoves = computed(() => {
@@ -99,9 +134,7 @@
         });
 
         tempMovesID.forEach((elem) => {
-            console.log(elem);
             moves.value.forEach((elem2) => {
-                console.log(elem2.ID);
                 if (elem == elem2.ID) {
                     console.log("hit");
                     tempType = elem2.acf.move_type[0].ID;
@@ -166,6 +199,63 @@
     function toCamelCaseWord(str) {
         // only upper case the first char and lowercase the rest.
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function initBool_types() {
+        bool_types.value = [];
+        types.value.forEach(() => {
+            bool_types.value.push(true);
+        });
+        bool_or.value = ref(true);
+        bool_and.value = ref(false);
+    }
+
+    function test_type_color(type, i) {
+        if (bool_types.value[i] == true) {
+            return type.acf.type_color;
+        } else {
+            return "var(--main)";
+        }
+    }
+
+    function updateTypeBool(index) {
+        let count = 0;
+        console.log(bool_and.value.value + "and : or" + bool_or.value);
+        bool_types.value.forEach((element) => {
+            if (element) {
+                count++;
+            }
+        });
+
+        if (bool_and.value.value) {
+            if (count < 2 && !bool_types.value[index]) {
+                bool_types.value[index] = true;
+            } else {
+                bool_types.value[index] = false;
+            }
+        } else {
+            bool_types.value[index] = !bool_types.value[index];
+        }
+
+        console.log(count);
+    }
+
+    function fixAndFilter() {
+        if (bool_and.value.value) {
+            let count2 = 0;
+            for (let index = 0; index < bool_types.value.length; index++) {
+                if (bool_types.value[index]) {
+                    count2++;
+                }
+                if (count2 > 2) {
+                    bool_types.value[index] = false;
+                }
+            }
+        }
+    }
+
+    function filterPkmnOr(pkmn) {
+
     }
 </script>
 
@@ -320,13 +410,16 @@
                         class="filter_button"
                         :style="
                             'background-color: ' +
-                            (bool_and ? 'var(--def_type)' : 'var(--main)') +
+                            (bool_and.value
+                                ? 'var(--def_type)'
+                                : 'var(--main)') +
                             ';'
                         "
                         id="button_and"
                         @click="
-                            bool_and = true;
-                            bool_or = false;
+                            bool_and.value = ref(true);
+                            bool_or.value = ref(false);
+                            fixAndFilter();
                         "
                     >
                         AND
@@ -335,13 +428,15 @@
                         class="filter_button"
                         :style="
                             'background-color: ' +
-                            (bool_or ? 'var(--def_type)' : 'var(--main)') +
+                            (bool_or.value
+                                ? 'var(--def_type)'
+                                : 'var(--main)') +
                             ';'
                         "
                         id="button_or"
                         @click="
-                            bool_and = false;
-                            bool_or = true;
+                            bool_and.value = ref(false);
+                            bool_or.value = ref(true);
                         "
                     >
                         OR
@@ -349,11 +444,32 @@
                 </div>
                 <div id="filter_types">
                     <div
-                        v-for="(type, tIndex) in getTypes"
                         class="filter_single_type"
-                        :style="'background-color:' + type.acf.type_color + ';'"
+                        v-for="(type, index) in getTypes"
+                        :key="index"
+                        :style="
+                            'background-color:' +
+                            test_type_color(type, index) +
+                            ';'
+                        "
+                        @click="updateTypeBool(index)"
                     >
                         {{ type.acf.type_name }}
+                    </div>
+                </div>
+                <div id="filters_button_wrapper">
+                    <div id="filter_reset" @click="initBool_types()">
+                        Reset Filter
+                    </div>
+                    <div
+                        id="filter_apply"
+                        @click="
+                            search = '';
+                            filters_bool = false;
+                            detail_bool = false;
+                        "
+                    >
+                        Apply filters
                     </div>
                 </div>
             </div>
